@@ -153,7 +153,7 @@ class PurchaseOrders
 		$mpsandbox   = get_option('purchaseorders_mpsandbox','') == 'yes';
 
 		$permalink   = get_permalink( get_option('purchaseorders_pageid',0) );
-		$preference_data = [];
+		$preference_data = array();
         $sent = false;
         $message = '';
 
@@ -466,24 +466,25 @@ class PurchaseOrders
         if ( isset($_SESSION['cart']) ) 
 		{
             unset($_SESSION['cart']['items']);
-			@session_destroy();
         }       
-		return '<div class="purchaseorders-cart-message order-sent">'. __('Your order was sent, you will receive an email notifying you that your order has been sent.','catablogcart') . '</div>';
+		return '<div class="purchaseorders-cart-message order-sent">'. 
+					__('Your order was sent, you will receive an email notifying you that your order has been sent.','purchase-orders') . 
+			   '</div>';
         
     }
 	
 	// ADMIN AREA
 	public static function admin_settings_menu() 
 	{
-		add_submenu_page(	'purchaseorders',   
+		add_submenu_page(	'options-general.php',   
 							__('Purchase Orders Options','purchase-orders'),  
 							__('Purchase Orders Options','purchase-orders'), 
 							'administrator', 
 							'purchaseorders' , 
-							array(self,'admin_settings_page') 
+							array('PurchaseOrders','admin_settings_page') 
 						);
 						
-		add_action( 'admin_init', array(self,'admin_settings_register') );
+		add_action( 'admin_init', array('PurchaseOrders','admin_settings_register') );
 	}
 
 	public static function admin_settings_register() 
@@ -590,7 +591,7 @@ class PurchaseOrders
 		</form>
 
 				  <div style="text-align: center;">
-					<small><?php _e('If you enjoy this plugin please donate!','purchase-orders')</small>
+					<small><?php _e('If you enjoy this plugin please donate!','purchase-orders') ?></small>
 					<br />
 					<form method="post" action="https://www.paypal.com/cgi-bin/webscr" target="_blank">
 					  <input type="hidden" name="cmd" value="_s-xclick">
