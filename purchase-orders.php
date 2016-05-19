@@ -35,7 +35,7 @@ load_plugin_textdomain('purchase-orders', false, dirname( plugin_basename( __FIL
 
 add_action('admin_menu', array('PurchaseOrders', 'admin_settings_menu'), 30 );
 
-add_shortcode('purchaseorder', array('PurchaseOrders', 'showCart'));
+add_shortcode('purchaseorders', array('PurchaseOrders', 'showCart'));
 
 wp_enqueue_style('purchase-orders-css', plugins_url( 'css/purchase-orders.css', __FILE__ ), false, '1','all');
 
