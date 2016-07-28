@@ -11,7 +11,7 @@
 }
 
 
-.purchaseorder-checkout--row
+.purchaseorder-checkout-row
 {
     clear: both;
     display: block;
@@ -21,8 +21,8 @@
 .purchaseorder-checkout-row label 
 {
     float: left;
-    display: block;
-    width: 100px;
+    display: inline-block;
+    width: 15%;
     padding-right: 15px;
 }
 
@@ -34,7 +34,28 @@
 
 .purchaseorder-checkout-row input 
 {
-    margin-bottom: 0;
+    margin-bottom: 0;    
 }
 
 
+
+.purchaseorderswidgetprofit
+{
+    line-heigth: 4em;
+}
+
+.purchaseorderswidgettotal
+{
+    font-size: 1.5em;
+    text-align: right;
+    border-top: 4px double grey;    
+    line-heigth: 4em;
+}
+
+.purchaceorderswidgetwait
+{
+    display: none;
+    width: 16px;
+    height: 16px;
+    background-image: url('loading.gif');
+}
