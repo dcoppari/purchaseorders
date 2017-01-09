@@ -2,153 +2,230 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Purchase Orders v0.1\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2016-05-19 14:44-0300\n"
-"PO-Revision-Date: 2016-05-19 14:45-0300\n"
-"Last-Translator: diego2k <diego2k@gmail.com>\n"
-"Language-Team: Mundo IT <info@mundoit.com.ar>\n"
-"Language: es\n"
+"POT-Creation-Date: 2017-01-09 20:11+0000\n"
+"PO-Revision-Date: 2017-01-09 20:11+0000\n"
+"Last-Translator: admin <info@mundoit.com.ar>\n"
+"Language-Team: Spanish (Spain)\n"
+"Language: es-ES\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Plural-Forms: nplurals=2; plural=n != 1;\n"
-"X-Generator: Poedit 1.8.3\n"
+"Plural-Forms: nplurals=2; plural=n != 1\n"
+"X-Generator: Loco - https://localise.biz/\n"
 "X-Poedit-SourceCharset: UTF-8\n"
 "X-Poedit-KeywordsList: __;_e;__ngettext:1,2;_n:1,2;__ngettext_noop:1,2;"
 "_n_noop:1,2;_c,_nc:4c,1,2;_x:1,2c;_ex:1,2c;_nx:4c,1,2;_nx_noop:4c,1,2\n"
 "X-Poedit-Basepath: ..\n"
 "X-Textdomain-Support: yes\n"
-"X-Poedit-SearchPath-0: .\n"
+"X-Poedit-SearchPath-0: ."
+
+#: lib/PurchaseOrders.class.php:455
+msgid "VAT"
+msgstr "CUIT"
+
+#: lib/PurchaseOrders.class.php:687
+msgid " -- Use Built In -- "
+msgstr ""
+
+#: lib/PurchaseOrders.class.php:712
+msgid "Order From Name"
+msgstr ""
+
+#: lib/PurchaseOrders.class.php:717
+msgid "Order From E-mail"
+msgstr ""
+
+#: lib/PurchaseOrders.class.php:722
+msgid "Order Destination E-mail"
+msgstr ""
+
+#: lib/PurchaseOrders.class.php:724
+msgid ""
+"Use Pipes | to separate selectable destination address example: Sales 1 "
+"<sales1@domain.com>|Sales 2 <sales2@domain.com>|Sales N <salesn@domain.com>"
+msgstr ""
+
+#: lib/PurchaseOrders.class.php:761
+msgid "Use Contact Form 7"
+msgstr ""
+
+#: lib/PurchaseOrders.class.php:763
+msgid ""
+"Use a Contact Form 7 Template for send purchase orders. In order to show the "
+"order include a <strong>[purchase-order]</strong> in your message body"
+msgstr ""
+
+#: lib/PurchaseOrders.class.php:770
+msgid "Mercadopago"
+msgstr ""
+
+#: lib/PurchaseOrders.class.php:774
+msgid "Client_ID"
+msgstr ""
+
+#: lib/PurchaseOrders.class.php:782
+msgid "Client_SECRET"
+msgstr ""
+
+#: lib/PurchaseWidget.class.php:64
+msgid "Margen"
+msgstr ""
+
+#. Name of the plugin
+msgid "Purchase Orders Generic"
+msgstr ""
+
+#. Description of the plugin
+msgid "Create a purchase order from almost any list"
+msgstr ""
+
+#. URI of the plugin
+msgid "https://github.com/diego2k/purchaseorders"
+msgstr ""
+
+#. Author of the plugin
+msgid "diego2k"
+msgstr ""
+
+#. Author URI of the plugin
+msgid "http://www.mundoit.com.ar/"
+msgstr ""
 
 # @ purchase-orders
-#: lib/PurchaseOrders.class.php:168
+#: lib/PurchaseOrders.class.php:216 lib/PurchaseWidget.class.php:118
 msgid "Cart is empty"
 msgstr "No hay elementos en el pedido"
 
 # @ purchase-orders
-#: lib/PurchaseOrders.class.php:177 lib/PurchaseOrders.class.php:470
+#: lib/PurchaseOrders.class.php:225 lib/PurchaseOrders.class.php:642
 msgid ""
 "Your order was sent, you will receive an email notifying you that your order "
 "has been sent."
 msgstr "Su pedido ha sido enviado, recibirá un e-mail de notificacion."
 
 # @ purchase-orders
-#: lib/PurchaseOrders.class.php:181
+#: lib/PurchaseOrders.class.php:229
 msgid ""
 "Unable to precess your order, please report this issue using contact form"
 msgstr "Imposible procesar su pedido, por favor reintente."
 
 # @ purchase-orders
-#: lib/PurchaseOrders.class.php:209
+#: lib/PurchaseOrders.class.php:258
 msgid "Code"
 msgstr "Codigo"
 
 # @ purchase-orders
-#: lib/PurchaseOrders.class.php:210
+#: lib/PurchaseOrders.class.php:259
 msgid "Description"
 msgstr "Descripcion"
 
 # @ purchase-orders
-#: lib/PurchaseOrders.class.php:211
+#: lib/PurchaseOrders.class.php:260 lib/PurchaseWidget.class.php:78
 msgid "Qty"
 msgstr "Cant."
 
 # @ purchase-orders
-#: lib/PurchaseOrders.class.php:213
+#: lib/PurchaseOrders.class.php:262 lib/PurchaseWidget.class.php:80
 msgid "Price"
 msgstr "Precio"
 
 # @ purchase-orders
-#: lib/PurchaseOrders.class.php:214
+#: lib/PurchaseOrders.class.php:263 lib/PurchaseWidget.class.php:81
 msgid "Total"
 msgstr "Total"
 
 # @ purchase-orders
-#: lib/PurchaseOrders.class.php:268 lib/PurchaseOrders.class.php:322
+#: lib/PurchaseOrders.class.php:315 lib/PurchaseOrders.class.php:490
 msgid "CONFIRM"
 msgstr "CONFIRMA"
 
+#: lib/PurchaseOrders.class.php:325
+msgid "Save for later"
+msgstr "Guardar"
+
 # @ purchase-orders
-#: lib/PurchaseOrders.class.php:281
+#: lib/PurchaseOrders.class.php:327
 msgid "Empty Cart"
 msgstr "Vaciar Carrito"
 
 # @ purchase-orders
-#: lib/PurchaseOrders.class.php:285
+#: lib/PurchaseOrders.class.php:341 lib/PurchaseOrders.class.php:434
 msgid "Order Now"
 msgstr "Pedir"
 
+#: lib/PurchaseOrders.class.php:444
+msgid "Seller"
+msgstr "Vendedor"
+
 # @ purchase-orders
-#: lib/PurchaseOrders.class.php:292
+#: lib/PurchaseOrders.class.php:450
 msgid "E-Mail"
 msgstr "E-Mail"
 
 # @ purchase-orders
-#: lib/PurchaseOrders.class.php:297
-msgid "Name"
-msgstr "Nombre y Apellido"
-
-# @ purchase-orders
-#: lib/PurchaseOrders.class.php:302
+#: lib/PurchaseOrders.class.php:460
 msgid "Phone"
 msgstr "Telefono"
 
 # @ purchase-orders
-#: lib/PurchaseOrders.class.php:307
-msgid "Address"
-msgstr "Domicilio"
+#: lib/PurchaseOrders.class.php:465
+msgid "Name"
+msgstr "Nombre y Apellido"
+
+#: lib/PurchaseOrders.class.php:470
+msgid "State"
+msgstr "Provincia"
+
+#: lib/PurchaseOrders.class.php:475
+msgid "Shipping"
+msgstr "Transporte"
+
+#: lib/PurchaseOrders.class.php:480
+msgid "Specifications for delivery"
+msgstr "Especificaciones para la entrega"
 
 # @ purchase-orders
-#: lib/PurchaseOrders.class.php:312
-msgid "Note"
-msgstr "Mensaje"
-
-# @ purchase-orders
-#: lib/PurchaseOrders.class.php:353
+#: lib/PurchaseOrders.class.php:527
 msgid "ORDER"
 msgstr "Pedido"
 
-#: lib/PurchaseOrders.class.php:478 lib/PurchaseOrders.class.php:479
-#: lib/PurchaseOrders.class.php:507
+#: lib/PurchaseOrders.class.php:649 lib/PurchaseOrders.class.php:650
+#: lib/PurchaseOrders.class.php:698
 msgid "Purchase Orders Options"
 msgstr "Purchase Orders Opciones"
 
 # @ purchase-orders
-#: lib/PurchaseOrders.class.php:513
+#: lib/PurchaseOrders.class.php:704
 msgid "Cart Page ID"
 msgstr "Pagina del Carrito"
 
-#: lib/PurchaseOrders.class.php:516
+#: lib/PurchaseOrders.class.php:707
 msgid "Create a page with the <strong>[purchaseorders]</strong> short code"
 msgstr ""
 "Crear una página que contenga el shortcode <strong>[purchaseorders]</strong>"
 
 # @ purchase-orders
-#: lib/PurchaseOrders.class.php:521
-msgid "Order E-mail From"
-msgstr "Remitente del E-Mail:"
-
-# @ purchase-orders
-#: lib/PurchaseOrders.class.php:526
+#: lib/PurchaseOrders.class.php:730
 msgid "Order E-mail Subject"
 msgstr "Asunto del E-mail"
 
 # @ purchase-orders
-#: lib/PurchaseOrders.class.php:531
+#: lib/PurchaseOrders.class.php:735
 msgid "Order E-Mail Template"
 msgstr "Plantilla del E-mail"
 
 # @ purchase-orders
-#: lib/PurchaseOrders.class.php:534
+#: lib/PurchaseOrders.class.php:738
 msgid "Special variables %ORDER%, %EMAIL%, %NAME%, %PHONE%, %ADDRESS%, %NOTE%"
 msgstr "Palabras claves %ORDER%, %EMAIL%, %NAME%, %PHONE%, %ADDRESS%, %NOTE%"
 
 # @ purchase-orders
-#: lib/PurchaseOrders.class.php:539
+#: lib/PurchaseOrders.class.php:743
 msgid "Send HTML E-mail"
 msgstr "Enviar E-mail HTML"
 
 # @ purchase-orders
-#: lib/PurchaseOrders.class.php:542
+#: lib/PurchaseOrders.class.php:746
 msgid ""
 "If checked the email will be sent as HTML, otherwise it will be plain text"
 msgstr ""
@@ -156,54 +233,33 @@ msgstr ""
 "vera en texto plano."
 
 # @ purchase-orders
-#: lib/PurchaseOrders.class.php:547
+#: lib/PurchaseOrders.class.php:751
 msgid "Hide Prices"
 msgstr "Ocultar Precios"
 
 # @ purchase-orders
-#: lib/PurchaseOrders.class.php:550
+#: lib/PurchaseOrders.class.php:754
 msgid "Enable this option to hide prices and totals"
 msgstr "Active esta opción si desea ocultar precios y totales"
 
-#: lib/PurchaseOrders.class.php:555
-msgid "Mercadopago"
-msgstr ""
-
-#: lib/PurchaseOrders.class.php:559
-msgid "Client_ID"
-msgstr ""
-
-#: lib/PurchaseOrders.class.php:562
+#: lib/PurchaseOrders.class.php:777
 msgid "This is MERCADOPAGO Client ID"
 msgstr "Ingrese el Client ID de Mercadopago"
 
-#: lib/PurchaseOrders.class.php:567
-msgid "Client_SECRET"
-msgstr ""
-
-#: lib/PurchaseOrders.class.php:570
+#: lib/PurchaseOrders.class.php:785
 msgid "This is MERCADOPAGO Client SECRET"
 msgstr "Ingrese el Client SECRET de Mercadopago"
 
-#: lib/PurchaseOrders.class.php:575
+#: lib/PurchaseOrders.class.php:790
 msgid "Enable Sandbox"
 msgstr "Activar modo de prueba"
 
-#: lib/PurchaseOrders.class.php:578
+#: lib/PurchaseOrders.class.php:793
 msgid "Enable this option to use Mercadopago in Sandbox mode"
 msgstr ""
 "Active esta opción si desea utilizar el modo de prueba de Mercadopago por el "
 "cual no se realizarán transacciones monetarias."
 
-# @ default
-#: lib/PurchaseOrders.class.php:586
-msgid "Save Changes"
-msgstr "Guardar"
-
-#: lib/PurchaseOrders.class.php:592
+#: lib/PurchaseOrders.class.php:806
 msgid "If you enjoy this plugin please donate!"
 msgstr "Si le ha gustado este Plugin colabore!"
-
-# @ purchase-orders
-#~ msgid "Create a page with the <strong>[purchase-orders]</strong> short code"
-#~ msgstr "Debe crear una pagina con el codigo [purchase-orders]"

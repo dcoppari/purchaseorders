@@ -34,7 +34,6 @@ require('lib/ArrayToTextTable.class.php');
 
 load_plugin_textdomain('purchase-orders', false, dirname( plugin_basename( __FILE__ ) ) . '/lang');
 
-
 wp_enqueue_style( 'toastr', plugins_url('/css/toastr.min.css', __FILE__ ) );
 wp_enqueue_style( 'purchase-orders', plugins_url('/css/purchase-orders.css', __FILE__ ), false, '1','all');
 
@@ -53,22 +52,35 @@ add_shortcode('purchaseorders',               array('PurchaseOrders', 'showCart'
 
 add_action( 'admin_menu',                     array('PurchaseOrders', 'admin_settings_menu'), 30 );
 
-add_action( 'wp_head','purchaseorders_ajaxurl' );
-function purchaseorders_ajaxurl() { ?> <script type="text/javascript">var purchaseordersAjaxurl = '<?=admin_url('admin-ajax.php'); ?>';</script> <?php }
+add_action( 'wp_head', function() { ?> <script type="text/javascript">var purchaseordersAjaxurl = '<?=admin_url('admin-ajax.php'); ?>';</script> <?php });
 
 add_action('init',      'purchaseorders_StartSession', 1);
 add_action('wp_logout', 'purchaseorders_EndSession');
 add_action('wp_login',  'purchaseorders_EndSession');
 
+
 function purchaseorders_StartSession() {
-	if(!session_id()) session_start();
 	
+	if(!session_id()) session_start();
+
+    if ( !isset($_SESSION['cart']) ) 
+    {
+		$profit = get_user_option( 'purchase_orders_profit', get_current_user_id() );
+		
+		if($profit === false ) $profit = 0;
+		
+        $_SESSION['cart']['seed'] = uniqid();
+        $_SESSION['cart']['profit'] = $profit;
+        $_SESSION['cart']['created'] = time();
+		
+    }
+
 	// Hooks for Contact Form 7 integration
 	if( class_exists('WPCF7_ContactForm') && get_option('purchaseorders_contactform7', 0) != 0 )
 	{
 		add_filter('wpcf7_form_hidden_fields', array('PurchaseOrders','addHiddenFields') );
 		add_action('wpcf7_before_send_mail', array('PurchaseOrders', 'processEvent'));
-	}
+	}        
 }
 
 function purchaseorders_EndSession() {

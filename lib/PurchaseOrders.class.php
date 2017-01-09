@@ -41,6 +41,13 @@ class PurchaseOrders
                     self::updateProfit($post_vars);
                     break;
                     
+                case '_save':
+                    self::saveCart();
+		            break;
+		        case '_load':
+		        	self::loadCart($post_vars['id']);
+		        	break;
+
                 case '_empty':
                     self::emptyCart();
 		            break;
@@ -80,23 +87,6 @@ class PurchaseOrders
 	 
     }
 
-	private static function checkSession()
-	{
-
-        if ( !isset($_SESSION['cart']) ) 
-        {
-			$profit = get_user_option( 'purchase_orders_profit', get_current_user_id() );
-			
-			if($profit === false ) $profit = 0;
-			
-            $_SESSION['cart'] = 1;
-            $_SESSION['cart']['seed'] = uniqid();
-            $_SESSION['cart']['profit'] = $profit;
-			
-        }
-	
-	}
-    
     private static function addToCart($post_vars = null)
     {
         
@@ -153,7 +143,6 @@ class PurchaseOrders
 		$_SESSION['cart']['items'][$itm]['total']    = $amnt * $qty;
         
         return true;
-        
     }
 
     private static function removeFromCart($post_vars = null)
@@ -170,7 +159,6 @@ class PurchaseOrders
             unset($_SESSION['cart']['items']);
         
         return true;
-        
     }
     
     private static function updateProfit($post_vars = null)
@@ -190,7 +178,6 @@ class PurchaseOrders
 			update_user_option( get_current_user_id(), 'purchase_orders_profit', $_SESSION['cart']['profit'] );
         
         return true;
-        
     }
     
     public static function showCart()
@@ -256,6 +243,9 @@ class PurchaseOrders
 		$preference_data["back_urls"]["pending"] = $permalink.'?purchaseorders&cmd=_thanks';
 		$preference_data["back_urls"]["failure"] = $permalink;
 		
+		$total = 0;
+		$cantidad = 0;
+
 		ob_start(); ?>
 		
 		<div class="purchaseorders-cart">
@@ -296,6 +286,7 @@ class PurchaseOrders
 															"category_id" => "computing",
 															"unit_price"  => $item['amount'] + 0 );
 						
+						$cantidad = $cantidad = 0 + $item['quantity'];
 						$total = $total + $item['total']; 
 					} ?>
 				</tbody>
@@ -331,6 +322,8 @@ class PurchaseOrders
 				}
 			} ?>
 
+			<a class="button MP-common-orange-CDm MP-ar-m-sq purchase-orders-action cart-empty-cart" href="?purchaseorders&cmd=_save"><?php _e('Save for later','purchase-orders'); ?></a>
+
 			<a class="button MP-common-orange-CDm MP-ar-m-sq purchase-orders-action cart-empty-cart" href="?purchaseorders&cmd=_empty"><?php _e('Empty Cart','purchase-orders'); ?></a>
 		
 		<?php
@@ -351,7 +344,54 @@ class PurchaseOrders
 		$data .= '</div>';
 
 		return $data;
-		
+	}
+
+	private static function saveCart()
+	{
+    	global $current_user;
+    	
+    	$stored_orders = false;
+
+    	if( is_user_logged_in() && isset($_SESSION['cart']) )
+    	{
+
+            get_currentuserinfo();
+
+            $id = $_SESSION['cart']['seed'];
+
+            $stored_orders = get_user_meta($current_user->ID, 'purchaseorders', true);
+            
+            $stored_orders[$id] = $_SESSION['cart'];
+
+            update_user_meta( $current_user->ID, 'purchaseorders', $stored_orders);
+        }
+
+        return $stored_orders;
+	}
+	
+	public static function loadCart($id, $single = true)
+	{
+    	global $current_user;
+    	
+    	$stored_orders = false;
+
+    	if( is_user_logged_in() )
+    	{
+            get_currentuserinfo();
+
+            $stored_orders = get_user_meta($current_user->ID, 'purchaseorders', true);
+            
+            if( is_array($stored_orders) )
+            {
+            	if( $single && isset($stored_orders[$id]) )
+            	{
+            		$stored_orders = $stored_orders[$id];
+            		$_SESSION['cart'] = $stored_orders;
+            	}
+            }
+        }
+
+        return $stored_orders;
 	}
 
 	public static function addHiddenFields($args)
@@ -368,8 +408,9 @@ class PurchaseOrders
 		$user = wp_get_current_user();
 		
 		$cuit = get_user_meta($user->ID, 'cuit_empresa', true); 
-		$razon_social = get_user_meta($user->ID, 'razon_social', true );
+		$phone = get_user_meta($user->ID, 'telefono_empresa', true );
 		$localidad = get_user_meta($user->ID, 'localidad_empresa', true); 
+		$razon_social = get_user_meta($user->ID, 'razon_social', true );
 		
 		$emailto = '';
 		$arrEmail = explode('|',get_option('purchaseorders_emailto'));
@@ -400,38 +441,43 @@ class PurchaseOrders
 				<input type="hidden" name="emailto" value="<?=$emailto; ?>" />
 			<?php } else { ?>
 			<span class="purchaseorder-checkout-row">
-				<label for="emailto"><?php _e('Vendedor','purchase-orders'); ?></label>
+				<label for="emailto"><?php _e('Seller','purchase-orders'); ?></label>
 				<select id="emailto" name="emailto" required="true"><?=$emailto; ?></select>
 			</span>
 			<?php } ?>
 		
-			<span class="purchaseorder-checkout-row" style="display: none;">
+			<span class="purchaseorder-checkout-row email">
 				<label for="email"><?php _e('E-Mail','purchase-orders'); ?></label>
 				<input type="email" size="60" id="email" name="email" value="<?=$user->user_email; ?>" pattern="[^ @]*@[^ @]*" />
 			</span>
 
-			<span class="purchaseorder-checkout-row" style="display: none;">
-				<label for="phone"><?php _e('CUIT','purchase-orders'); ?></label>
-				<input type="text" size="60" id="phone" name="phone" value="<?=$cuit; ?>" />
+			<span class="purchaseorder-checkout-row vat">
+				<label for="cuit"><?php _e('VAT','purchase-orders'); ?></label>
+				<input type="text" size="60" id="cuit" name="cuit" value="<?=$cuit; ?>" />
 			</span>
 
-			<span class="purchaseorder-checkout-row" style="display: none;">
+			<span class="purchaseorder-checkout-row phone">
+				<label for="phone"><?php _e('Phone','purchase-orders'); ?></label>
+				<input type="text" size="60" id="phone" name="phone" value="<?=$telefono_empresa; ?>" />
+			</span>
+
+			<span class="purchaseorder-checkout-row firstlast">
 				<label for="firstlast"><?php _e('Name','purchase-orders'); ?></label>
 				<input type="text" size="60" id="firstlast" name="firstlast" value="<?=$razon_social ?>" />
 			</span>
 
-			<span class="purchaseorder-checkout-row" style="display: none;">
+			<span class="purchaseorder-checkout-row state">
 				<label for="state"><?php _e('State','purchase-orders'); ?></label>
 				<input type="text" size="60" id="state" name="state" value="<?=$localidad ?>" />
 			</span>
 
-			<span class="purchaseorder-checkout-row">
-				<label for="address"><?php _e('Transporte','purchase-orders'); ?></label>
+			<span class="purchaseorder-checkout-row address">
+				<label for="address"><?php _e('Shipping','purchase-orders'); ?></label>
 				<input type="text" size="60" id="address" name="address" />
 			</span>
 			
-			<span class="purchaseorder-checkout-row">
-				<label for="note"><?php _e('Especificaciones para la entrega','purchase-orders'); ?></label>
+			<span class="purchaseorder-checkout-row note">
+				<label for="note"><?php _e('Specifications for delivery','purchase-orders'); ?></label>
 				<textarea type="text" size="60" id="note" name="note"></textarea>
 			</span>
 			
@@ -451,7 +497,6 @@ class PurchaseOrders
 		$form = ob_get_contents(); ob_end_clean();
 		
 		return $form;
-
     }
     
     private static function checkOut($post_vars)
@@ -561,6 +606,7 @@ class PurchaseOrders
                
         $message = str_replace('%EMAIL%',   $post_vars['email'],     $message );
         $message = str_replace('%NAME%',    $post_vars['firstlast'], $message );
+        $message = str_replace('%CUIT%',    $post_vars['cuit'],      $message );
         $message = str_replace('%PHONE%',   $post_vars['phone'],     $message );
         $message = str_replace('%ADDRESS%', $post_vars['address'],   $message );
         $message = str_replace('%CITY%',    $post_vars['city'],      $message );
@@ -575,9 +621,11 @@ class PurchaseOrders
         $ok = wp_mail( $to, $subject, $message, $headers );
 
 		$_SESSION['cart']['submit'] = $ok;
+		$_SESSION['cart']['submitted'] = time();
+
+		self::saveCart();
 
 		return $ok;
-
     }
 
     private static function emptyCart()
@@ -594,11 +642,6 @@ class PurchaseOrders
 		return '<div class="purchaseorders-cart-message order-sent">' . __('Your order was sent, you will receive an email notifying you that your order has been sent.','purchase-orders') . '</div>';
     }
 
-
-	
-	
-	
-	
 	// ADMIN AREA
 	public static function admin_settings_menu() 
 	{
@@ -770,9 +813,7 @@ class PurchaseOrders
 				</form>
 			</div>
 
-		</div>
-		
-	<?php
+		</div><?php
     }
 	
 	private static function generate_post_select($name, $post_type, $selected = 0, $show_option_none = null) 
