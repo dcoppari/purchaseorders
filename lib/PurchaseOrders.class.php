@@ -11,23 +11,24 @@ class PurchaseOrders
 	
     public static function processEvent()
     {
-        
-	    if ((isset($_REQUEST['cmd']) && $_REQUEST['cmd'] !== '') || isset($_REQUEST['purchaseorders']) )
+               
+	    if ( (isset($_REQUEST['cmd']) && $_REQUEST['cmd'] !== '') || isset($_REQUEST['purchaseorders']) || isset($_REQUEST['purchaseordersipn']) )
 	    {
+    
 		    $post_vars = array_map('stripslashes_deep', $_REQUEST);
 		    $post_vars = array_map('trim', $post_vars);
 
-			$isAjax = (defined('DOING_AJAX') && DOING_AJAX);
-			
-			$redirect = $isAjax == false; // Only Redirect when is not an ajax call
-
-			$redirect = apply_filters('purchaseorders_redirect',$redirect);
-			
+	    	// IPN
 			$command = $post_vars['cmd'];
-			
+	        if(isset($_REQUEST['purchaseordersipn'])) $command = '_ipn';
+
+			$isAjax = (defined('DOING_AJAX') && DOING_AJAX);
+			$redirect = $isAjax == false; // Only Redirect when is not an ajax call
+			$redirect = apply_filters('purchaseorders_redirect',$redirect);
+
 			do_action('purchaseorders_before_event', $command);
 
-			switch( $post_vars['cmd'] )
+			switch( $command )
 		    {
 		        case '_cart':
 		            self::addToCart($post_vars);
@@ -56,6 +57,11 @@ class PurchaseOrders
                     self::thanksCart();
 		            break;
 		            
+				case '_ipn':
+					self::processIPN($post_vars);
+					die();
+					break;
+
 		        case '_remove':
 		            self::removeFromCart($post_vars);
 		            break;		            
@@ -65,7 +71,7 @@ class PurchaseOrders
 		            break;
 					
 				default:
-					$redirect = false;
+					$redirect = true;
 		    }
 
 			do_action('purchaseorders_after_event', $command, $redirect);
@@ -92,8 +98,12 @@ class PurchaseOrders
         
         if ( !is_array($post_vars) ) return false;
 
+		$quantity = $post_vars['quantity'] + 0;
+
+		if( $quantity <= 0 ) return false;
+
         $item_info = array();
-     
+
         // Parse item information Only add the one that begins with item_
         foreach($post_vars as $post_item_key => $post_item_value)
         {
@@ -102,7 +112,7 @@ class PurchaseOrders
                $item_info[$post_item_key] = $post_item_value;
             }
         }
-
+		
 		$item_info['quantity'] = $post_vars['quantity'];
 		
 		// Checks Whenever or not add Prices
@@ -155,7 +165,7 @@ class PurchaseOrders
         
         unset($_SESSION['cart']['items'][$itm]);
         
-        if ( count($_SESSION['cart']['items']) < 1 )         
+        if ( count($_SESSION['cart']['items']) < 1 )
             unset($_SESSION['cart']['items']);
         
         return true;
@@ -182,9 +192,10 @@ class PurchaseOrders
     
     public static function showCart()
     {
-    
+   		global $current_user;
+   		
 		$hidePrices  = (get_option('purchaseorders_hideprices', '') != '');
-
+		
 		// Contact FORM
 		$wcf7id = false;
 		
@@ -199,11 +210,11 @@ class PurchaseOrders
 		$mpcid       = get_option('purchaseorders_mpclientid','');
 		$mpcscrt     = get_option('purchaseorders_mpclientscrt','');
 		$mpsandbox   = get_option('purchaseorders_mpsandbox','') == 'yes';
-
 		$permalink   = get_permalink( get_option('purchaseorders_pageid',0) );
+		
 		$preference_data = array();
-        $sent = false;
-        $message = '';
+		$sent = false;
+		$message = '';
 
         if ( !isset($_SESSION['cart']) ) 
             $empty = true;
@@ -212,7 +223,7 @@ class PurchaseOrders
 				$empty = true;
 
         if ($empty) 
-        {    
+        {
 			return '<div class="purchaseorders-cart-message cart-empty">'. __('Cart is empty','purchase-orders') .'</div>';
         }
 		
@@ -226,22 +237,27 @@ class PurchaseOrders
 			}
 			else
 			{
-				$message = __('Unable to precess your order, please report this issue using contact form','purchase-orders');
+				$message = __('Unable to process your order, please report this issue using contact form','purchase-orders');
 			}
 		}
+
+		$id = $_SESSION['cart']['seed'];
 
 		$cart = $_SESSION['cart']['items'];
 
 		if(!$hidePrices && $mpcid != '' && $mpcscrt != '')  
 		{
 			include dirname(__FILE__)."/mercadopago.php";
-  			$mp = new MP($mpcid, $mpcscrt);
-  			
+			$mp = new MP($mpcid, $mpcscrt);
+
+			$preference_data["back_urls"]["success"] = $permalink.'?purchaseorders&cmd=_thanks';
+			$preference_data["back_urls"]["pending"] = $permalink.'?purchaseorders&cmd=_thanks';
+			$preference_data["back_urls"]["failure"] = $permalink.'?purchaseorders&cmd=_cart';
+			$preference_data["notification_url"]     = $permalink.'?purchaseordersipn';
+			$preference_data["auto_return"]			 = "approved";
+			$preference_data["external_reference"]   = $id;
+				
 		}
-		
-		$preference_data["back_urls"]["success"] = $permalink.'?purchaseorders&cmd=_thanks';
-		$preference_data["back_urls"]["pending"] = $permalink.'?purchaseorders&cmd=_thanks';
-		$preference_data["back_urls"]["failure"] = $permalink;
 		
 		$total = 0;
 		$cantidad = 0;
@@ -267,7 +283,7 @@ class PurchaseOrders
 				</thead>
 				
 				<tbody>
-					<?php foreach($cart as $order => $item) { ?>
+					<?php foreach($cart as $order => $item) : ?>
 					<tr>
 						<td><?php echo $item['item_number']; ?></td>
 						<td><?php echo $item['item_name'];   ?></td>
@@ -276,19 +292,12 @@ class PurchaseOrders
 						<td align="right"><?php echo number_format($item['amount'],2); ?></td>
 						<td align="right"><?php echo number_format($item['total'],2);  ?></td>
 						<?php endif; ?>
-						<td><a class="purchaseorders-cart-action cart-remove " href="?purchaseorders&cmd=_remove&item_order=<?php echo $order; ?>"><i class="fa fa-times" aria-hidden="true"></i></a></td>
+						<td><a class="purchaseorders-cart-action cart-remove" href="?purchaseorders&cmd=_remove&item_order=<?php echo $order; ?>"><i class="fa fa-times" aria-hidden="true"></i></a></td>
 					</tr>
 					<?php 
-
-						$preference_data["items"][] = array("title"       => $item['item_name'], 
-															"currency_id" => "ARS", 
-															"quantity"    => $item['quantity'] + 0,
-															"category_id" => "computing",
-															"unit_price"  => $item['amount'] + 0 );
-						
-						$cantidad = $cantidad = 0 + $item['quantity'];
+						$cantidad = $cantidad = 0 + $item['quantity']; 
 						$total = $total + $item['total']; 
-					} ?>
+					endforeach; ?>
 				</tbody>
 				
 				<?php if(!$hidePrices) : ?>
@@ -300,7 +309,7 @@ class PurchaseOrders
 					</tr>
 				</tfoot>
 				<?php endif; ?>
-			</table>               
+			</table>            
 		    
 			<br/>
 
@@ -309,20 +318,34 @@ class PurchaseOrders
 			{
 				try 
 				{
-					$preference = $mp->create_preference($preference_data); 
+						$preference_data["items"][] = [
+										"id"          => $id,
+										"title"       => "ORDEN DE COMPRA #$id", 
+										"currency_id" => "ARS", 
+										"quantity"    => 1,
+										"category_id" => "video_games",
+										"unit_price"  => $total ];
+
+					$preference = $mp->create_preference($preference_data);
 					$mphref = $mpsandbox ? $preference["response"]["sandbox_init_point"] : $preference["response"]["init_point"];
 					?>
-					<a href="<?php echo $mphref; ?>" name="MP-Checkout" class="orange-ar-m-sq-arall"><?php _e('CONFIRM','purchase-orders'); ?></a>
+
+<pre>
+<?php print_r($preference); ?>
+</pre>
+
+					<a href="<?=$mphref; ?>" name="MP-Checkout" mp-mode="redirect" class="orange-ar-m-sq-arall"><?php _e('CONFIRM','purchase-orders'); ?></a>
 					<script type="text/javascript" src="http://mp-tools.mlstatic.com/buttons/render.js"></script>
+
 					<?php
 				} 
-				catch(Exception $e) 
-				{
-				  echo $e->getMessage(); 
-				}
-			} ?>
+				catch(Exception $e) {  echo $e->getMessage(); }
+			} 
+			?>
 
+			<?php if( is_user_logged_in() && isset($_SESSION['cart']) ) : ?>
 			<a class="button MP-common-orange-CDm MP-ar-m-sq purchase-orders-action cart-empty-cart" href="?purchaseorders&cmd=_save"><?php _e('Save for later','purchase-orders'); ?></a>
+			<?php endif; ?>
 
 			<a class="button MP-common-orange-CDm MP-ar-m-sq purchase-orders-action cart-empty-cart" href="?purchaseorders&cmd=_empty"><?php _e('Empty Cart','purchase-orders'); ?></a>
 		
@@ -348,19 +371,18 @@ class PurchaseOrders
 
 	private static function saveCart()
 	{
-    	global $current_user;
-    	
-    	$stored_orders = false;
+		global $current_user;
 
-    	if( is_user_logged_in() && isset($_SESSION['cart']) )
-    	{
+		$stored_orders = false;
 
+		if( is_user_logged_in() && isset($_SESSION['cart']) )
+		{
             get_currentuserinfo();
 
             $id = $_SESSION['cart']['seed'];
 
             $stored_orders = get_user_meta($current_user->ID, 'purchaseorders', true);
-            
+
             $stored_orders[$id] = $_SESSION['cart'];
 
             update_user_meta( $current_user->ID, 'purchaseorders', $stored_orders);
@@ -368,15 +390,15 @@ class PurchaseOrders
 
         return $stored_orders;
 	}
-	
+
 	public static function loadCart($id, $single = true)
 	{
-    	global $current_user;
-    	
-    	$stored_orders = false;
+		global $current_user;
 
-    	if( is_user_logged_in() )
-    	{
+		$stored_orders = false;
+
+		if( is_user_logged_in() )
+		{
             get_currentuserinfo();
 
             $stored_orders = get_user_meta($current_user->ID, 'purchaseorders', true);
@@ -405,16 +427,21 @@ class PurchaseOrders
 	
 	private static function showBuiltinForm()
 	{
-		$user = wp_get_current_user();
-		
-		$cuit = get_user_meta($user->ID, 'cuit_empresa', true); 
-		$phone = get_user_meta($user->ID, 'telefono_empresa', true );
-		$localidad = get_user_meta($user->ID, 'localidad_empresa', true); 
-		$razon_social = get_user_meta($user->ID, 'razon_social', true );
-		
 		$emailto = '';
+
+		if( is_user_logged_in() )
+		{
+			$user = wp_get_current_user();
+			$email = $user->user_email;
+			$firstlast = $user->display_name;
+			
+			$vat = get_user_meta($user->ID, 'vat', true); 
+			$phone = get_user_meta($user->ID, 'phone', true );
+			$localidad = get_user_meta($user->ID, 'city', true); 
+		}
+
 		$arrEmail = explode('|',get_option('purchaseorders_emailto'));
-		
+
 		if( count($arrEmail) == 1 ) 
 		{
 			$emailto = (string) $arrEmail[0];
@@ -448,27 +475,27 @@ class PurchaseOrders
 		
 			<span class="purchaseorder-checkout-row email">
 				<label for="email"><?php _e('E-Mail','purchase-orders'); ?></label>
-				<input type="email" size="60" id="email" name="email" value="<?=$user->user_email; ?>" pattern="[^ @]*@[^ @]*" />
+				<input type="email" size="60" id="email" name="email" value="<?=$email; ?>" pattern="[^ @]*@[^ @]*" />
 			</span>
 
 			<span class="purchaseorder-checkout-row vat">
-				<label for="cuit"><?php _e('VAT','purchase-orders'); ?></label>
-				<input type="text" size="60" id="cuit" name="cuit" value="<?=$cuit; ?>" />
+				<label for="vat"><?php _e('VAT','purchase-orders'); ?></label>
+				<input type="number" size="60" id="vat" name="vat" value="<?=$vat; ?>" pattern="[0-9]{8,8}" maxlength="8" />
 			</span>
 
 			<span class="purchaseorder-checkout-row phone">
 				<label for="phone"><?php _e('Phone','purchase-orders'); ?></label>
-				<input type="text" size="60" id="phone" name="phone" value="<?=$telefono_empresa; ?>" />
+				<input type="text" size="60" id="phone" name="phone" value="<?=$phone; ?>" />
 			</span>
 
 			<span class="purchaseorder-checkout-row firstlast">
 				<label for="firstlast"><?php _e('Name','purchase-orders'); ?></label>
-				<input type="text" size="60" id="firstlast" name="firstlast" value="<?=$razon_social ?>" />
+				<input type="text" size="60" id="firstlast" name="firstlast" value="<?=$firstlast ?>" />
 			</span>
 
 			<span class="purchaseorder-checkout-row state">
-				<label for="state"><?php _e('State','purchase-orders'); ?></label>
-				<input type="text" size="60" id="state" name="state" value="<?=$localidad ?>" />
+				<label for="city"><?php _e('City','purchase-orders'); ?></label>
+				<input type="text" size="60" id="city" name="city" value="<?=$city ?>" />
 			</span>
 
 			<span class="purchaseorder-checkout-row address">
@@ -477,7 +504,7 @@ class PurchaseOrders
 			</span>
 			
 			<span class="purchaseorder-checkout-row note">
-				<label for="note"><?php _e('Specifications for delivery','purchase-orders'); ?></label>
+				<label for="note"><?php _e('Specifications for delivery','purchase-orders'); ?></labe
 				<textarea type="text" size="60" id="note" name="note"></textarea>
 			</span>
 			
@@ -501,6 +528,41 @@ class PurchaseOrders
     
     private static function checkOut($post_vars)
     {
+    
+		if( !isset($post_vars['emailto']) || $post_vars['emailto'] == '')
+		{
+			$arrEmail = explode('|', get_option('purchaseorders_emailto'));
+			$post_vars['emailto'] = implode(',', $arrEmail);
+		}
+    
+        if ( !isset($_SESSION['cart']) ) return false;        
+
+        if ( !is_array($_SESSION['cart']['items']) ) return false;
+
+        if( $_SESSION['cart']['seed'] != $post_vars['seed'] ) return false;
+
+		$standard_subject = __('ORDER','purchase-orders') . ' ' . get_option('blogname');	
+		$standard_from    = get_option('admin_email');
+		$standard_order   = '%EMAIL% %NAME% %PHONE% %ADDRESS% %CITY% %STATE% %NOTE% %ORDER%';
+		
+        $to       = $post_vars['emailto'];
+        $from     = get_option('purchaseorders_emailfrom', $standard_from);
+		$fromName = get_bloginfo('name');
+        $subject  = get_option('purchaseorders_emailsubject', $standard_subject);      
+        $isHtml   = (get_option('purchaseorders_emailhtml', '') != '') ? 'html' : 'plain';
+		$cart     = $_SESSION['cart']['items']; 
+		
+		// Customer E-mail
+		$bcc      = $post_vars['email'];
+
+		// Filters		
+		$to       = apply_filters('purchaseorders_email_order_to',      $to);
+		$from     = apply_filters('purchaseorders_email_order_from',    $from);
+		$fromName = apply_filters('purchaseorders_email_order_fromname',$fromName);
+		$subject  = apply_filters('purchaseorders_email_order_subject', $subject);
+		$cart     = apply_filters('purchaseorders_email_order_items',   $cart);
+
+		$order = '';	
 
 		// We Got CF7 Alright!
 		if( class_exists('WPCF7_ContactForm') && get_option('purchaseorders_contactform7', 0) != 0 )
@@ -518,30 +580,6 @@ class PurchaseOrders
 			return $post_vars;
 		}
 
-        if ( !isset($_SESSION['cart']) ) return false;        
-
-        if ( !is_array($_SESSION['cart']['items']) ) return false;
-
-        if( $_SESSION['cart']['seed'] != $post_vars['seed'] ) return false;
-
-		$standard_subject = __('ORDER','purchase-orders') . ' ' . get_option('blogname');	
-		$standard_from    = get_option('admin_email');
-		$standard_order   = '%EMAIL% %NAME% %PHONE% %ADDRESS% %CITY% %STATE% %NOTE% %ORDER%';
-		
-        $to       = $post_vars['emailto'];
-        $from     = get_option('purchaseorders_emailfrom',    $standard_from);
-		$fromName = get_bloginfo('name');
-        $subject  = get_option('purchaseorders_emailsubject', $standard_subject);      
-        $isHtml   = (get_option('purchaseorders_emailhtml', '') != '') ? 'html' : 'plain';
-		$cart     = $_SESSION['cart']['items']; 
-
-		$to       = apply_filters('purchaseorders_email_order_to',      $to);
-		$from     = apply_filters('purchaseorders_email_order_from',    $from);
-		$fromName = apply_filters('purchaseorders_email_order_fromname',$fromName);
-		$subject  = apply_filters('purchaseorders_email_order_subject', $subject);
-		$cart     = apply_filters('purchaseorders_email_order_items',   $cart);
-	
-		$order = '';	
 
 		if($isHtml)
 		{
@@ -591,7 +629,7 @@ class PurchaseOrders
 
         $headers = "From: $fromName <$from>"                   . PHP_EOL .
                    "To: $to"                                   . PHP_EOL .
-                   "BCC: $from"                                . PHP_EOL .
+                   "Reply-to: $bcc"                            . PHP_EOL . 
                    "MIME-Version 1.0"                          . PHP_EOL .
                    "Content-type: text/$isHtml; charset=utf-8" . PHP_EOL .
 		           "X-Mailer: PHP-" . phpversion()             . PHP_EOL ;
@@ -603,10 +641,11 @@ class PurchaseOrders
 			$message = file_get_contents($template);
 		else
 			$message = get_option('purchaseorders_emailtemplate', $standard_order);
-               
+         
+             
         $message = str_replace('%EMAIL%',   $post_vars['email'],     $message );
         $message = str_replace('%NAME%',    $post_vars['firstlast'], $message );
-        $message = str_replace('%CUIT%',    $post_vars['cuit'],      $message );
+        $message = str_replace('%VAT%',     $post_vars['VAT'],       $message );
         $message = str_replace('%PHONE%',   $post_vars['phone'],     $message );
         $message = str_replace('%ADDRESS%', $post_vars['address'],   $message );
         $message = str_replace('%CITY%',    $post_vars['city'],      $message );
@@ -623,8 +662,8 @@ class PurchaseOrders
 		$_SESSION['cart']['submit'] = $ok;
 		$_SESSION['cart']['submitted'] = time();
 
-		self::saveCart();
-
+		if( is_user_logged_in() ) self::saveCart();
+		
 		return $ok;
     }
 
@@ -637,10 +676,106 @@ class PurchaseOrders
 
     private static function thanksCart()
     {
-        if ( isset($_SESSION['cart']) ) unset($_SESSION['cart']);
+
+        if ( isset($_SESSION['cart']) ) 
+		{
+			$mpcid       = get_option('purchaseorders_mpclientid','');
+			$mpcscrt     = get_option('purchaseorders_mpclientscrt','');
+
+			// Store Cart if MP
+			if($mpcid != '' && $mpcscrt != '')  
+			{
+				$id = 'po_'.$_SESSION['cart']['seed'];
+				$value = serialize( $_SESSION['cart'] );
+				update_option( $id, $value, false );
+			}
+
+			//unset($_SESSION['cart']);
+		}
         
-		return '<div class="purchaseorders-cart-message order-sent">' . __('Your order was sent, you will receive an email notifying you that your order has been sent.','purchase-orders') . '</div>';
+		echo '<div class="purchaseorders-cart-message order-sent">' . __('Your order was sent, you will receive an email notifying you that your order has been sent.','purchase-orders') . '</div>';
+
+		return true;
     }
+
+
+
+	// PROCESS IPN
+	private static function processIPN($post_vars)
+	{
+
+		// Mercado Pago 
+		$mpcid       = get_option('purchaseorders_mpclientid','');
+		$mpcscrt     = get_option('purchaseorders_mpclientscrt','');
+
+		if($mpcid == '' || $mpcscrt == '') 
+		{
+			http_response_code(400);
+			return;
+		}
+
+		include dirname(__FILE__)."/mercadopago.php";
+
+		$mp = new MP($mpcid, $mpcscrt);
+
+		$params = ["access_token" => $mp->get_access_token()];
+
+		// Check mandatory parameters
+		if (!isset($post_vars["id"], $post_vars["topic"]) || !ctype_digit($post_vars["id"])) {
+			http_response_code(400);
+			return;
+		}
+		
+		try
+		{
+			$trid = $post_vars["id"];
+			
+			// Get the payment reported by the IPN. 
+			if($post_vars["topic"] == 'payment')
+			{
+				$payment_info = $mp->get("$mpsandbox/collections/notifications/$trid", $params, false);
+				$merchant_order_id = $payment_info["response"]["collection"]["merchant_order_id"];
+				$merchant_order_info = $mp->get("$mpsandbox/merchant_orders/$merchant_order_id", $params, false);
+			}
+			else if($post_vars["topic"] == 'merchant_order')
+			{
+				$merchant_order_info = $mp->get("$mpsandbox/merchant_orders/$trid", $params, false);
+			}
+			
+		}
+		catch(Exception $e) { }
+	
+		file_put_contents( dirname(__FILE__) . '/ipn.log', print_r($merchant_order_info , true), FILE_APPEND);
+
+		//If the payment's transaction amount is equal (or bigger) than the merchant order's amount you can release your items 
+		if (isset($merchant_order_info["status"]) && $merchant_order_info["status"] == 200) 
+		{
+
+			$post_vars['email'] = $merchant_order_info["response"]["payer"]["email"];
+
+			
+			$id = 'po_'.$merchant_order_info["response"]["external_reference"];
+			$cart = get_option($id, '');
+			
+			if($cart != '') 
+			{
+				$_SESSION['cart'] = unserialize($cart);
+				//$_SESSION['cart']['payments'] = $payments;
+				$post_vars['seed'] = $_SESSION['cart']['seed'];
+
+				if( self::checkOut($post_vars) == true )
+				{
+					//delete_option( $id );
+				}
+			}
+			
+
+		}
+		
+		return true;		
+	}
+
+
 
 	// ADMIN AREA
 	public static function admin_settings_menu() 
@@ -665,6 +800,7 @@ class PurchaseOrders
 		register_setting('purchaseorders-group', 'purchaseorders_emailsubject' );
 		register_setting('purchaseorders-group', 'purchaseorders_emailtemplate');
 		register_setting('purchaseorders-group', 'purchaseorders_emailhtml'    );
+//aaaaa	register_setting('purchaseorders-group', 'purchaseorders_tra'    );
 		register_setting('purchaseorders-group', 'purchaseorders_hideprices'   );
 		register_setting('purchaseorders-group', 'purchaseorders_contactform7' );
 
@@ -698,7 +834,9 @@ class PurchaseOrders
 			<h2><?php _e('Purchase Orders Options','purchase-orders'); ?></h2>
 
 			<form method="post" action="options.php">
+
 				<?php settings_fields( 'purchaseorders-group' ); ?>
+				
 				<table class="form-table">
 					<tr valign="top">
 						<th scope="row"><?php _e('Cart Page ID','purchase-orders'); ?></th>
@@ -838,5 +976,5 @@ class PurchaseOrders
 		return $valret;
 	}
 	
-
 }
+

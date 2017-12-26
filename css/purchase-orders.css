@@ -22,13 +22,11 @@
 {
     float: left;
     display: inline-block;
-    width: 15%;
     padding-right: 15px;
 }
 
 .purchaseorder-checkout-row textarea 
 {
-    width: 80%;
     height: 150px;
 }
 

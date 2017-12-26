@@ -36,6 +36,7 @@ load_plugin_textdomain('purchase-orders', false, dirname( plugin_basename( __FIL
 
 wp_enqueue_style( 'toastr', plugins_url('/css/toastr.min.css', __FILE__ ) );
 wp_enqueue_style( 'purchase-orders', plugins_url('/css/purchase-orders.css', __FILE__ ), false, '1','all');
+wp_enqueue_style( 'fontawesome',"//maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css");
 
 wp_register_script( 'toastr', plugins_url('/js/toastr.min.js', __FILE__ ), array('jquery'),'1.0', false);
 wp_register_script( 'purchase-orders', plugins_url('/js/purchase-orders.js', __FILE__ ), array('toastr'), '0.1', false);
